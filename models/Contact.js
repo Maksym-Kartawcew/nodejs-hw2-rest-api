@@ -3,7 +3,7 @@ import Joi from "joi";
 
 import { handleSaveError, runValidateAtUpdate } from "./hooks.js";
 
-const ContactSchema = new Schema({
+const contactSchema = new Schema({
   name: {
     type: String,
     required: [true, "Set name for contact"],
@@ -20,11 +20,11 @@ const ContactSchema = new Schema({
   },
 }, {versionKey: false, timestamps: true});
 
-ContactSchema.post("save", handleSaveError);
+contactSchema.post("save", handleSaveError);
 
-ContactSchema.pre("findOneAndUpdate", runValidateAtUpdate);
+contactSchema.pre("findOneAndUpdate", runValidateAtUpdate);
 
-ContactSchema.post("findOneAndUpdate", handleSaveError);
+contactSchema.post("findOneAndUpdate", handleSaveError);
 
 export const ContactAddSchema = Joi.object({
     name: Joi.string().required().messages({
@@ -39,6 +39,6 @@ export const ContactUpdateFavoriteSchema = Joi.object({
     favorite: Joi.boolean().required(),
 })
 
-const Contact = model("Contact", ContactSchema);
+const Contact = model("Contact", contactSchema);
 
 export default Contact;
