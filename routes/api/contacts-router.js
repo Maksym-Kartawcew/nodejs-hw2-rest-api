@@ -6,7 +6,7 @@ import * as contactSchemas from "../../models/Contact.js";
 
 import { validateBody } from "../../decorators/decorators.js";
 
-import { authenticate, isValidId } from "../../middlewares/middlewares.js";
+import { authenticate, upload, isValidId } from "../../middlewares/middlewares.js";
 
 const contactAddValidate = validateBody(contactSchemas.ContactAddSchema);
 const contactUpdateFavoriteValidate = validateBody(
@@ -21,7 +21,7 @@ contactsRouter.get("/", contactsController.listContacts);
 
 contactsRouter.get("/:id", isValidId, contactsController.getContactById);
 
-contactsRouter.post("/", contactAddValidate, contactsController.addContact);
+contactsRouter.post("/", upload.single("avatar"), contactAddValidate, contactsController.addContact);
 
 contactsRouter.put(
   "/:id",
