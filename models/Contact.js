@@ -1,44 +1,52 @@
-import {Schema, model} from "mongoose";
+import { Schema, model } from "mongoose";
 import Joi from "joi";
 
 import { handleSaveError, runValidateAtUpdate } from "./hooks.js";
 
-const ContactSchema = new Schema({
-  name: {
-    type: String,
-    required: [true, "Set name for contact"],
+const contactSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Set name for contact"],
+    },
+    email: {
+      type: String,
+    },
+    phone: {
+      type: String,
+    },
+    favourite: {
+      type: Boolean,
+      default: false,
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
-  email: {
-    type: String,
-  },
-  phone: {
-    type: String,
-  },
-  favorite: {
-    type: Boolean,
-    default: false,
-  },
-}, {versionKey: false, timestamps: true});
+  { versionKey: false, timestamps: true }
+);
 
-ContactSchema.post("save", handleSaveError);
+contactSchema.post("save", handleSaveError);
 
-ContactSchema.pre("findOneAndUpdate", runValidateAtUpdate);
+contactSchema.pre("findOneAndUpdate", runValidateAtUpdate);
 
-ContactSchema.post("findOneAndUpdate", handleSaveError);
+contactSchema.post("findOneAndUpdate", handleSaveError);
 
 export const ContactAddSchema = Joi.object({
-    name: Joi.string().required().messages({
-        "any.required": `"title" must be exist`
-    }),
-    email: Joi.string().required(),
-    favorite: Joi.boolean(),
-    phone: Joi.string().required(),
-})
+  name: Joi.string().required().messages({
+    "any.required": `"title" must be exist`,
+  }),
+  email: Joi.string().required(),
+  favourite: Joi.boolean(),
+  phone: Joi.string().required(),
+});
 
 export const ContactUpdateFavoriteSchema = Joi.object({
-    favorite: Joi.boolean().required(),
-})
+  favourite: Joi.boolean().required(),
+});
 
-const Contact = model("Contact", ContactSchema);
+const Contact = model("Contact", contactSchema);
 
 export default Contact;
