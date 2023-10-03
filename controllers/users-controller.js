@@ -1,25 +1,60 @@
 import User from "../models/User.js";
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import gravatar from "gravatar";
+import Jimp from "jimp";
+import path from "path";
+import fs from "fs/promises";
+
 import { ctrlWrapper } from "../decorators/decorators.js";
 import { HttpError } from "../helpers/helpers.js";
 
 const { JWT_SECRET } = process.env;
+const avatarsPath = path.resolve("public", "avatars");
 
 const register = async (req, res) => {
   const { useremail, password } = req.body;
+
   const user = await User.findOne({ useremail });
   if (user) {
     throw HttpError(409, "Email already exist");
   }
 
+  const avatarURL = gravatar.url(useremail);
   const hashPassword = await bcrypt.hash(password, 10);
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL,
+  });
 
   res.status(201).json({
     username: newUser.username,
     useremail: newUser.useremail,
+    avatarURL: newUser.avatarURL,
   });
+};
+
+const updateAvatar = async (req, res) => {
+  const { _id } = req.user;
+  const { path: oldPath, filename } = req.file;
+  const newPath = path.join(avatarsPath, filename);
+
+  Jimp.read(oldPath)
+    .then((avatar) => {
+      return avatar.resize(250, 250).write(newPath);
+    })
+    .catch((err) => {
+      throw err;
+    });
+
+  await fs.rename(oldPath, newPath);
+  const avatarURL = path.join("avatars", filename);
+
+  await User.findByIdAndUpdate(_id, { avatarURL });
+  res.json({ avatarURL });
 };
 
 const login = async (req, res) => {
@@ -60,27 +95,29 @@ const getCurrent = (req, res) => {
   res.json({ useremail, username });
 };
 
-
-
 const updateSubscription = async (req, res) => {
   const { subscription } = req.body;
   const { _id } = req.user;
 
   try {
-       if (!["starter", "pro", "business"].includes(subscription)) {
+    if (!["starter", "pro", "business"].includes(subscription)) {
       throw HttpError(400, "Invalid subscription value");
     }
-    const updatedUser = await User.findByIdAndUpdate(_id, { subscription }, { new: true });
+    const updatedUser = await User.findByIdAndUpdate(
+      _id,
+      { subscription },
+      { new: true }
+    );
     if (!updatedUser) {
       throw HttpError(404, "User not found");
     }
-     res.json(updatedUser);
+    res.json(updatedUser);
   } catch (error) {
-    res.status(error.status || 500).json({ message: error.message || "Internal Server Error" });
+    res
+      .status(error.status || 500)
+      .json({ message: error.message || "Internal Server Error" });
   }
 };
-
-
 
 export default {
   register: ctrlWrapper(register),
@@ -88,4 +125,5 @@ export default {
   logout: ctrlWrapper(logout),
   getCurrent: ctrlWrapper(getCurrent),
   updateSubscription: ctrlWrapper(updateSubscription),
+  updateAvatar: ctrlWrapper(updateAvatar),
 };
