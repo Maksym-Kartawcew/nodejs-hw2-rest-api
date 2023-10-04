@@ -21,8 +21,6 @@ contactsRouter.get("/", contactsController.listContacts);
 
 contactsRouter.get("/:id", isValidId, contactsController.getContactById);
 
-contactsRouter.post("/", contactAddValidate, contactsController.addContact);
-
 contactsRouter.put(
   "/:id",
   isValidId,
